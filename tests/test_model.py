@@ -6,6 +6,33 @@ import pytest
 import numpy as np
 
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def graph_mode_splits(x, x_axis, modes):
+    for mode in modes.keys():
+        plt.plot(x, modes[mode])
+        plt.title("%s " % mode + "vs %s" % x_axis)
+        plt.xlabel(x_axis)
+        plt.ylabel('%s Percentage Mode Split' % mode)
+        plt.show()
+        if not os.path.exists(ROOT_DIR + "/../plots"):
+            os.mkdir(ROOT_DIR + "/../plots")
+        plt.savefig(ROOT_DIR + "/../plots/%smodesplitvs" % mode + "%s.png" % x_axis)
+        plt.clf()
+
+    for mode in modes.keys():
+        plt.plot(x, modes[mode], color=list(np.random.uniform(0, 1, size=3)))
+    plt.legend(modes.keys())
+    plt.title("Modes vs %s" % x_axis)
+    plt.xlabel(x_axis)
+    plt.ylabel('Percentage Mode Split')
+    plt.show()
+    if not os.path.exists(ROOT_DIR + "/../plots"):
+        os.mkdir(ROOT_DIR + "/../plots")
+    plt.savefig(ROOT_DIR + "/../plots/modesplitvs%s.png" % x_axis)
+    plt.clf()
+
+
 def test_find_equilibrium():
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     a = Model(ROOT_DIR + "/../input-data")
@@ -24,20 +51,14 @@ def test_find_equilibrium():
     ldCosts = []
     allCosts = []
     initialDistance = a.scenarioData['subNetworkData'].at[2, "Length"]
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
     for dist in busLaneDistance:
         a.scenarioData['subNetworkData'].at[10, "Length"] = dist
         a.scenarioData['subNetworkData'].at[2, "Length"] = initialDistance - dist
         a.findEquilibrium()
         ms = a.getModeSplit()._mapping
-        fig1, ax1 = plt.subplots()
-        explode = (0.1, 0.1, 0.1, 0.1, 0.1)
-        patches, texts = ax1.pie(ms.values(), explode=explode, labels=ms.keys())
-        plt.legend(patches, ms.values(), loc="best")
-        ax1.axis('equal')
-        ax1.set_title("Mode splits for " + str(dist) + " busLaneDistance")
-        # Not sure where to save for now, will figure that out sooner or later
-        plt.savefig("graphs/.....????")
-        plt.show()
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
         speeds = pd.DataFrame(a.microtypes.getModeSpeeds())
         busSpeed.append(speeds.loc["bus", "B"])
         carSpeedA.append(speeds.loc["auto", "A"])
@@ -52,10 +73,20 @@ def test_find_equilibrium():
         ldCosts.append(0.014*dist)
         allCosts.append(a.getUserCosts().totalEqualVOT + a.getOperatorCosts().total + 0.0*dist)
 
+    graph_mode_splits(busLaneDistance, "BusLaneDistance", modes)
+
+    vMaxs = np.arange(12, 25, 0.5)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for speed in vMaxs:
+        a.scenarioData['subNetworkData'].at[10, "vMax"] = speed
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(vMaxs, "vMax", modes)
+
+
     plt.scatter(busLaneDistance, busSpeed, marker='<', label="Bus")
-
-
-
     plt.scatter(busLaneDistance, carSpeedA, label="A")
     plt.scatter(busLaneDistance, carSpeedB, label="B")
     plt.scatter(busLaneDistance, carSpeedC, label="C")
