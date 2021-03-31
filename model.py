@@ -18,7 +18,26 @@ from utils.population import Population
 
 class Optimizer:
     """
-    Originally used to find the optimal equilibrium of the modes, but now findEquilibrium does the same?
+    Wrapper for the Model opject that allows model inputs to be optimized over.
+    
+    Attributes
+    ----------
+    path : str
+        File path to input data
+    fromToSubNetworkIDs : dict | None
+        1:1 mapping of subnetworks between which ROW can be reassigned, e.g. mixed traffic -> bus only
+    modesAndMicrotypes : dict | None
+        List of tuples of mode/microtype pairs for which we will optimize headways
+        e.g. [('A', 'bus'), ('B','rail')]
+    method : str
+        Optimization method
+        
+    Methods
+    ---------
+    evaluate(reallocations):
+        Evaluate the objective funciton given a set of modifications to the transportation system
+    minimize():
+        Minimize the objective function using the set method
     """
 
     def __init__(self, path: str, fromToSubNetworkIDs=None, modesAndMicrotypes=None, method="shgo"):
@@ -110,9 +129,9 @@ class Optimizer:
     def minimize(self):
         if self.__method == "shgo":
             return shgo(self.evaluate, self.getBounds(), sampling_method="simplicial")
-        elif self.__method == "sklearn":
-            b = self.getBounds()
-            return gp_minimize(self.evaluate, self.getBounds(), n_calls=100)
+        #elif self.__method == "sklearn":
+        #    b = self.getBounds()
+        #    return gp_minimize(self.evaluate, self.getBounds(), n_calls=100)
         # elif self.__method == "noisy":
         #     return minimizeCompass(self.evaluate, self.x0(), bounds=self.getBounds(), paired=False, deltainit=500000.0,
         #                            errorcontrol=False)

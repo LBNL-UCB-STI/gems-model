@@ -56,9 +56,7 @@ def test_find_equilibrium():
         a.scenarioData['subNetworkData'].at[10, "Length"] = dist
         a.scenarioData['subNetworkData'].at[2, "Length"] = initialDistance - dist
         a.findEquilibrium()
-        ms = a.getModeSplit()._mapping
-        for mode in ms.keys():
-            modes[mode].append(ms[mode])
+        ms = a.getModeSplit()
         speeds = pd.DataFrame(a.microtypes.getModeSpeeds())
         busSpeed.append(speeds.loc["bus", "B"])
         carSpeedA.append(speeds.loc["auto", "A"])
