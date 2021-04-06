@@ -56,7 +56,9 @@ def test_find_equilibrium():
         a.scenarioData['subNetworkData'].at[10, "Length"] = dist
         a.scenarioData['subNetworkData'].at[2, "Length"] = initialDistance - dist
         a.findEquilibrium()
-        ms = a.getModeSplit()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
         speeds = pd.DataFrame(a.microtypes.getModeSpeeds())
         busSpeed.append(speeds.loc["bus", "B"])
         carSpeedA.append(speeds.loc["auto", "A"])
@@ -73,15 +75,110 @@ def test_find_equilibrium():
 
     graph_mode_splits(busLaneDistance, "BusLaneDistance", modes)
 
-    vMaxs = np.arange(12, 25, 0.5)
+    # vMaxs = np.arange(12, 25, 0.5)
+    # modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    # for speed in vMaxs:
+    #     for i in range(1, 5):
+    #         a.scenarioData['subNetworkData'].at[i, "vMax"] = speed
+    #     for i in range(9, 13):
+    #         a.scenarioData['subNetworkData'].at[i, "vMax"] = speed
+    #     a.findEquilibrium()
+    #     ms = a.getModeSplit()._mapping
+    #     for mode in ms.keys():
+    #         modes[mode].append(ms[mode])
+    # graph_mode_splits(vMaxs, "vMax", modes)
+    #
+    # densityMax = np.arange(0.1, 0.2, 0.005)
+    # modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    # for density in densityMax:
+    #     for i in range(1, 5):
+    #         a.scenarioData['subNetworkData'].at[i, "densityMax"] = density
+    #     for i in range(9, 13):
+    #         a.scenarioData['subNetworkData'].at[i, "densityMax"] = density
+    #     a.findEquilibrium()
+    #     ms = a.getModeSplit()._mapping
+    #     for mode in ms.keys():
+    #         modes[mode].append(ms[mode])
+    # graph_mode_splits(densityMax, "densityMax", modes)
+    #
+    # avglinklen = np.arange(25, 250, 15)
+    # modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    # for leng in avglinklen:
+    #     for i in range(1, 5):
+    #         a.scenarioData['subNetworkData'].at[i, "avgLinkLength"] = leng
+    #     for i in range(9, 13):
+    #         a.scenarioData['subNetworkData'].at[i, "avgLinkLength"] = leng
+    #     a.findEquilibrium()
+    #     ms = a.getModeSplit()._mapping
+    #     for mode in ms.keys():
+    #         modes[mode].append(ms[mode])
+    # graph_mode_splits(avglinklen, "avgLinkLength", modes)
+
+    headWay = np.arange(180, 1800, 90)
     modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
-    for speed in vMaxs:
-        a.scenarioData['subNetworkData'].at[10, "vMax"] = speed
+    for time in headWay:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "Headway"] = time
         a.findEquilibrium()
         ms = a.getModeSplit()._mapping
         for mode in ms.keys():
             modes[mode].append(ms[mode])
-    graph_mode_splits(vMaxs, "vMax", modes)
+    graph_mode_splits(headWay, "HeadWay", modes)
+
+    stopSpacing = np.arange(200, 1600, 100)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for dist in stopSpacing:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "StopSpacing"] = dist
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(stopSpacing, "StopSpacing", modes)
+
+    PassengerWait = np.arange(0, 15, 1)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for length in PassengerWait:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "PassengerWait"] = length
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(PassengerWait, "PassengerWait", modes)
+
+    PassengerWaitDedicated = np.arange(0, 15, 1)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for length in PassengerWaitDedicated:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "PassengerWaitDedicated"] = length
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(PassengerWaitDedicated, "PassengerWaitDedicated", modes)
+
+    MinStopTime = np.arange(5, 30, 1)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for length in MinStopTime:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "MinStopTime"] = length
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(MinStopTime, "MinStopTime", modes)
+
+    CoveragePortion = np.arange(0.05, 0.5, 0.03)
+    modes = {"bus": [], "rail": [], "bike": [], "auto": [], "walk": []}
+    for length in CoveragePortion:
+        for i in ["A", "B", "C", "D"]:
+            a.microtypes.modeData['bus'].at[i, "CoveragePortion"] = length
+        a.findEquilibrium()
+        ms = a.getModeSplit()._mapping
+        for mode in ms.keys():
+            modes[mode].append(ms[mode])
+    graph_mode_splits(CoveragePortion, "CoveragePortion", modes)
 
 
     plt.scatter(busLaneDistance, busSpeed, marker='<', label="Bus")
