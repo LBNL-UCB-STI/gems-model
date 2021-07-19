@@ -8,10 +8,15 @@ from utils.choiceCharacteristics import ModalChoiceCharacteristics
 
 
 class PopulationGroup:
-    def __init__(self, homeLocation: str, populationGroupType: str, population: float):
+    def __init__(self, homeLocation: str, populationGroupType: str, df: pd.DataFrame, idx:int):
         self.homeLocation = homeLocation
         self.populationGroupType = populationGroupType
-        self.population = population
+        self.__data = df
+        self.__idx = idx
+
+    @property
+    def population(self):
+        return self.__data.iloc[self.__idx].Population
 
 
 class DemandClass:
@@ -25,50 +30,50 @@ class DemandClass:
         else:
             return 0.0
 
-    def updateModeSplit(self, mcc: ModalChoiceCharacteristics) -> Dict[str, float]:
-        k = 1.0
-        modes = mcc.modes()
-        utils = np.zeros(len(modes), dtype=float)
-        for idx, mode in enumerate(modes):
-            util = 0.
-            util += self[mode, "Intercept"]
-            util += (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"]
-            util += (mcc[mode].wait_time * 60.0) * self[mode, "BetaWaitTime"]
-            util += (mcc[mode].wait_time * 60.0) ** 2.0 * self[mode, "BetaWaitTimeSquared"]
-            util += (mcc[mode].access_time * 60.0) * self[mode, "BetaAccessTime"]
-            util += mcc[mode].cost * self[mode, "VOM"]
-            if mode == "bike":
-                util -= (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"] * self[
-                    mode, "ProtectedPreference"] * (mcc[mode].protected_distance / mcc.distanceInMiles)
-            utils[idx] = util
-            # utils = np.append(utils, util)
-        exp_utils = np.exp(utils * k)
-        probabilities = exp_utils / np.sum(exp_utils)
-        mode_split = dict()
-        for ind in range(np.size(probabilities)):
-            mode_split[modes[ind]] = probabilities[ind]
-        return mode_split
+    # def updateModeSplit(self, mcc: ModalChoiceCharacteristics) -> Dict[str, float]:
+    #     k = 1.0
+    #     modes = mcc.modes()
+    #     utils = np.zeros(len(modes), dtype=float)
+    #     for idx, mode in enumerate(modes):
+    #         util = 0.
+    #         util += self[mode, "Intercept"]
+    #         util += (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"]
+    #         util += (mcc[mode].wait_time * 60.0) * self[mode, "BetaWaitTime"]
+    #         util += (mcc[mode].wait_time * 60.0) ** 2.0 * self[mode, "BetaWaitTimeSquared"]
+    #         util += (mcc[mode].access_time * 60.0) * self[mode, "BetaAccessTime"]
+    #         util += mcc[mode].cost * self[mode, "VOM"]
+    #         if mode == "bike":
+    #             util -= (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"] * self[
+    #                 mode, "ProtectedPreference"] * (mcc[mode].protected_distance / mcc.distanceInMiles)
+    #         utils[idx] = util
+    #         # utils = np.append(utils, util)
+    #     exp_utils = np.exp(utils * k)
+    #     probabilities = exp_utils / np.sum(exp_utils)
+    #     mode_split = dict()
+    #     for ind in range(np.size(probabilities)):
+    #         mode_split[modes[ind]] = probabilities[ind]
+    #     return mode_split
 
-    def numpyModeSplit(self, mcc: ModalChoiceCharacteristics) -> np.ndarray:
-        k = 1.0
-        modes = mcc.modes()
-        utils = np.zeros(len(modes), dtype=float)
-        for idx, mode in enumerate(modes):
-            util = 0.
-            util += self[mode, "Intercept"]
-            util += (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"]
-            util += (mcc[mode].wait_time * 60.0) * self[mode, "BetaWaitTime"]
-            util += (mcc[mode].wait_time * 60.0) ** 2.0 * self[mode, "BetaWaitTimeSquared"]
-            util += (mcc[mode].access_time * 60.0) * self[mode, "BetaAccessTime"]
-            util += mcc[mode].cost * self[mode, "VOM"]
-            if mode == "bike":
-                util -= (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"] * self[
-                    mode, "ProtectedPreference"] * (mcc[mode].protected_distance / mcc.distanceInMiles)
-            utils[idx] = util
-            # utils = np.append(utils, util)
-        exp_utils = np.exp(utils * k)
-        probabilities = exp_utils / np.sum(exp_utils)
-        return probabilities
+    # def numpyModeSplit(self, mcc: ModalChoiceCharacteristics) -> np.ndarray:
+    #     k = 1.0
+    #     modes = mcc.modes()
+    #     utils = np.zeros(len(modes), dtype=float)
+    #     for idx, mode in enumerate(modes):
+    #         util = 0.
+    #         util += self[mode, "Intercept"]
+    #         util += (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"]
+    #         util += (mcc[mode].wait_time * 60.0) * self[mode, "BetaWaitTime"]
+    #         util += (mcc[mode].wait_time * 60.0) ** 2.0 * self[mode, "BetaWaitTimeSquared"]
+    #         util += (mcc[mode].access_time * 60.0) * self[mode, "BetaAccessTime"]
+    #         util += mcc[mode].cost * self[mode, "VOM"]
+    #         if mode == "bike":
+    #             util -= (mcc[mode].travel_time * 60.0) * self[mode, "BetaTravelTime"] * self[
+    #                 mode, "ProtectedPreference"] * (mcc[mode].protected_distance / mcc.distanceInMiles)
+    #         utils[idx] = util
+    #         # utils = np.append(utils, util)
+    #     exp_utils = np.exp(utils * k)
+    #     probabilities = exp_utils / np.sum(exp_utils)
+    #     return probabilities
 
     def getModeCostPerTrip(self, mcc: ModalChoiceCharacteristics, mode, params=None):
         if mode not in mcc:
@@ -161,8 +166,42 @@ class Population:
         if (homeMicrotypeID, populationGroupType) in self.__populationGroups:
             return self.__populationGroups[homeMicrotypeID, populationGroupType].population
         else:
-            print("OH NO, no population group ", populationGroupType, " in microtype ", homeMicrotypeID)
             return 0
+
+    def getUtilityParam(self, param: str, populationGroupTypeID: str, tripPurposeID: str, mode: str, mID=None):
+        if mID is None:
+            mIDs = self.__scenarioData.microtypeIds
+        else:
+            mIDs = [mID]
+        vals = []
+        out = []
+
+        for mID in mIDs:
+            di = DemandIndex(mID, populationGroupTypeID, tripPurposeID)
+            if di in self.diToIdx:
+                vals.append(mID)
+                out.append(self.__numpy[self.diToIdx[di], self.modeToIdx[mode], self.paramToIdx[param]])
+        return vals, out
+
+    def setUtilityParam(self, value: float, param: str, populationGroupTypeID=None, tripPurposeID=None, mode=None):
+        if populationGroupTypeID is None:
+            populationGroupTypeIDs = self.__scenarioData['populationGroups'].PopulationGroupTypeID.unique()
+        else:
+            populationGroupTypeIDs = [populationGroupTypeID]
+        if tripPurposeID is None:
+            tripPurposeIDs = self.__scenarioData['populationGroups'].TripPurposeID.unique()
+        else:
+            tripPurposeIDs = [tripPurposeID]
+        if mode is None:
+            modes = list(self.__scenarioData.modeToIdx.keys())
+        else:
+            modes = [mode]
+        for mID in self.__scenarioData.microtypeIds:
+            for popGroup in populationGroupTypeIDs:
+                for tp in tripPurposeIDs:
+                    for mode in modes:
+                        di = DemandIndex(mID, popGroup, tp)
+                        self.__numpy[self.diToIdx[di], self.modeToIdx[mode], self.paramToIdx[param]] = value
 
     def importPopulation(self, populations: pd.DataFrame, populationGroups: pd.DataFrame):
         for row in populations.itertuples():
@@ -170,7 +209,7 @@ class Population:
             populationGroupType = row.PopulationGroupTypeID
             self.__populationGroups[homeMicrotypeID, populationGroupType] = PopulationGroup(homeMicrotypeID,
                                                                                             populationGroupType,
-                                                                                            row.Population)
+                                                                                            populations, row.Index)
             self.totalPopulation += row.Population
 
         data = populationGroups.set_index(['TripPurposeID', 'PopulationGroupTypeID', 'Mode']).unstack(-1)

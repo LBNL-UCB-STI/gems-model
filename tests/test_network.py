@@ -19,6 +19,9 @@ def model() -> Model:
 
 
 def test_mfd(model):
+    model.scenarioData['populationGroups'].loc[
+        model.scenarioData['populationGroups']['Mode'] == "bus", "BetaTravelTime"] = -1e6
+
     demands = [235, 255, 265]
     totalTimesPlot = []
     totalTimesSpeed = []

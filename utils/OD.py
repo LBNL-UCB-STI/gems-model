@@ -280,11 +280,12 @@ class DemandIndex:
         self.homeMicrotype = homeMicrotypeID
         self.populationGroupType = populationGroupTypeID
         self.tripPurpose = tripPurposeID
-        self.__hash = hash((self.homeMicrotype, self.populationGroupType, self.tripPurpose))
+        self.__hash = hash((self.homeMicrotype.lower(), self.populationGroupType.lower(), self.tripPurpose.lower()))
 
     def __eq__(self, other):
-        if (self.homeMicrotype == other.homeMicrotype) & (self.populationGroupType == other.populationGroupType) & (
-                self.tripPurpose == other.tripPurpose):
+        if (self.homeMicrotype.lower() == other.homeMicrotype.lower()) & (
+                self.populationGroupType.lower() == other.populationGroupType.lower()) & (
+                self.tripPurpose.lower() == other.tripPurpose.lower()):
             return True
         else:
             return False
@@ -387,7 +388,7 @@ class TripCollection:
                         odi = ODindex(fromId, toId, dId)
                         self[odi] = self.addEmpty(odi)
         print("-------------------------------")
-        print("|  Loaded ", len(df), " trips")
+        print("|  Loaded ", len(df), " unique trip types")
 
     def __iter__(self):
         return iter(self.__trips.items())
@@ -436,7 +437,7 @@ class TripGeneration:
             relevantDemand = self.__data.loc[self.__data["TimePeriodID"] == timePeriodID]
             for row in relevantDemand.itertuples():
                 self[row.PopulationGroupTypeID, row.TripPurposeID] = row.TripGenerationRatePerHour
-            print("|  Loaded ", len(relevantDemand), " demand classes")
+            # print("|  Loaded ", len(relevantDemand), " demand classes")
 
     def __iter__(self):
         return iter(self.tripClasses.items())
@@ -493,7 +494,7 @@ class OriginDestination:
     def initializeTimePeriod(self, timePeriod, timePeriodID):
         self.__currentTimePeriod = timePeriod
         if timePeriod not in self.__originDestination:
-            print("|  Loaded ", len(self.__ods.loc[self.__ods["TimePeriodID"] == timePeriodID]), " distance bins")
+            # print("|  Loaded ", len(self.__ods.loc[self.__ods["TimePeriodID"] == timePeriodID]), " distance bins")
             relevantODs = self.__ods.loc[self.__ods["TimePeriodID"] == timePeriodID]
             merged = relevantODs.merge(self.__distances,
                                        on=["TripPurposeID", "OriginMicrotypeID", "DestinationMicrotypeID"],
@@ -503,8 +504,8 @@ class OriginDestination:
                 grouped["tot"] = grouped["Portion_OD"] * grouped["Portion_Dist"]
                 tot = np.sum(grouped["tot"])
                 grouped["tot"] = grouped["tot"] / tot
-                if abs(tot - 1) > 0.1:  # TODO: FIX
-                    print(f"Oops, totals for {tripClass} add up to {tot}")
+                # if abs(tot - 1) > 0.1:  # TODO: FIX
+                #     print(f"Oops, totals for {tripClass} add up to {tot}")
                 distribution = dict()
                 for row in grouped.itertuples():
                     distribution[
@@ -661,8 +662,11 @@ class TransitionMatrices:
         return np.zeros(self.numpy.shape[0])
 
     def averageMatrix(self, weights: np.ndarray):
-        return TransitionMatrix(self.microtypeIdToIdx, np.average(self.numpy, axis=0, weights=weights),
-                                diameters=self.__diameters)
+        if np.sum(weights) > 0.0:
+            return TransitionMatrix(self.microtypeIdToIdx, np.average(self.numpy, axis=0, weights=weights),
+                                    diameters=self.__diameters)
+        else:
+            return TransitionMatrix(self.microtypeIdToIdx, diameters=self.__diameters)
 
     def importTransitionMatrices(self, matrices: pd.DataFrame, microtypeIDs: pd.DataFrame, distanceBins: pd.DataFrame):
         default = pd.DataFrame(0.0, index=microtypeIDs.MicrotypeID, columns=microtypeIDs.MicrotypeID)
@@ -671,5 +675,5 @@ class TransitionMatrices:
             odi = ODindex(*key)
             self.__data[odi] = df  # TODO: Delete this
             self.__numpy[self.odiToIdx[odi], :, :] = df.to_numpy()
-        print("|  Loaded ", len(df), " transition probabilities")
+        print("|  Loaded ", str(matrices.size), " transition probabilities")
         print("-------------------------------")

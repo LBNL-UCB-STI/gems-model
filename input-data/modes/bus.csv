@@ -1,5 +1,5 @@
 ﻿MicrotypeID,Headway,PerStartCost,PerEndCost,PerMileCost,VehicleCapacity,VehicleSize,StopSpacing,VehicleOperatingCostPerHour,PassengerWait,PassengerWaitDedicated,MinStopTime,CoveragePortion
-A,300,0,0,0,50,3.0,1000,150,5,2,8,0.25
-B,300,0,0,0,50,3.0,1000,150,5,2,8,0.25
-C,600,0,0,0,50,3.0,1400,150,5,2,8,0.15
-D,1200,0,0,0,50,3.0,1600,150,5,2,8,0.05
+A,180,0,0,0,50,3.0,1000,350,3,1,7,0.3
+B,240,0,0,0,50,3.0,1000,350,3,1,7,0.25
+C,500,0,0,0,50,3.0,1400,350,3,1,7,0.15
+D,450,0,0,0,50,3.0,1600,350,3,1,7,0.15

@@ -583,7 +583,7 @@ class BusMode(Mode):
             totalDistance = sum([n.L for n in self.networks])
             undedicatedDistance = totalDistance - dedicatedDistance
             return max(0, (self.routeDistanceToNetworkDistance * totalDistance - dedicatedDistance) * (
-                        network.L / undedicatedDistance))
+                    network.L / undedicatedDistance))
             # return self.routeDistanceToNetworkDistance * totalDistance * network.L / (totalDistance - dedicatedDistance)
 
     def getN(self, network=None):
@@ -617,7 +617,7 @@ class BusMode(Mode):
         driving_time = self.getOperatingL(network) / network.base_speed
         spd = self.getOperatingL(network) / (stopped_time + driving_time)
         if np.isnan(spd):
-            spd = 0.1
+            spd = 0.005
             self.__bad = True
         else:
             self.__bad = False
@@ -665,6 +665,7 @@ class BusMode(Mode):
             portionOfTimeStopped = min([meanTimePerStop * meanTimePerStop / self.headwayInSec, 1.0])
             # TODO: Think through this more fully. Is this the right way to scale up this time to distance?
             out = portionOfTimeStopped * network.avgLinkLength * self.getN(network)
+            out = min(out, numberOfStops * network.avgLinkLength / 100, (network.L - network.getBlockedDistance()) * 0.5)
             # portionOfRouteBlocked = out / self.routeLength
         else:
             out = 0
@@ -675,7 +676,9 @@ class BusMode(Mode):
             L_blocked = self.calculateBlockedDistance(n)
             self._L_blocked[n] = L_blocked
             n.L_blocked[self.name] = L_blocked  # * self.getRouteLength() / n.L
-            n.getNetworkStateData().blockedDistance += L_blocked
+            n.getNetworkStateData().blockedDistance = L_blocked # HACK: Only one mode can block distance at a time
+            if n.getNetworkStateData().blockedDistance > self.getRouteLength():
+                print('HMMMMM')
 
     def assignVmtToNetworks(self):
         speeds = self.getSpeeds()
@@ -696,11 +699,9 @@ class BusMode(Mode):
                 n.setVMT(self.name, self._VMT[n])
                 n.updateBaseSpeed()
                 self._speed[n] = self.getSubNetworkSpeed(n)
-                self._N_eff[n] = VMT / self._speed[n] * self.relativeLength
+                self._N_eff[n] = min(VMT / self._speed[n] * self.relativeLength, self.getRouteLength() / n.avgLinkLength /100)
                 n.setN(self.name, self._N_eff[n])
                 n.getNetworkStateData().nonAutoAccumulation += self._N_eff[n]
-            else:
-                print("BAD WHY IS THIS SPEED NEGATIVE")
         self.updateCommercialSpeed()
 
     def updateCommercialSpeed(self):
@@ -814,15 +815,21 @@ class Network:
         self.base_speed = self.freeFlowSpeed
         self.isJammed = False
 
-    def resetModes(self):
-        for mode in self._modes.values():
-            # self.N_eq[mode.name] = mode.getN(self) * mode.params.relativeLength
-            self._VMT[mode] = mode._VMT[self]
-            self._N_eff[mode] = mode._N_eff[self]
-            self.L_blocked[mode.name] = mode.getBlockedDistance(self)
-        self.isJammed = False
+    def resetSpeeds(self):
         self.base_speed = self.freeFlowSpeed
-        # mode.reset()
+        self.isJammed = False
+        for key in self.L_blocked.keys():
+            self.L_blocked[key] = 0.0
+
+    # def resetModes(self):
+    #     for mode in self._modes.values():
+    #         # self.N_eq[mode.name] = mode.getN(self) * mode.params.relativeLength
+    #         self._VMT[mode] = mode._VMT[self]
+    #         self._N_eff[mode] = mode._N_eff[self]
+    #         self.L_blocked[mode.name] = mode.getBlockedDistance(self)
+    #     self.isJammed = False
+    #     self.base_speed = self.freeFlowSpeed
+    # mode.reset()
 
     def setVMT(self, mode: str, VMT: float):
         self._VMT[mode] = VMT
@@ -891,7 +898,7 @@ class Network:
                 self._networkStateData.V_steadyState = V_steadyState
                 if overrideMatrix:
                     self.base_speed = max([0.1, (V_init + V_final) / 2.0])
-                return max([0.1, (V_init + V_final) / 2.0])  # TODO: Actually take the integral
+                return max([2.0, (V_init + V_final) / 2.0])  # TODO: Actually take the integral
         else:
             return self.freeFlowSpeed
 
@@ -1037,6 +1044,7 @@ class NetworkCollection:
         uniqueModes = set([item for sublist in allModes for item in sublist])
         for n in self._networks.values():
             n.isJammed = False
+            n.resetSpeeds()
         self.modes = dict()
         for m in uniqueModes:
             # m.updateN(TravelDemand())
@@ -1053,8 +1061,9 @@ class NetworkCollection:
             m.updateDemand(self.demands[m.name])
         for it in range(nIters):
             for modes, n in self:
-                n.getNetworkStateData().resetBlockedDistance()
+                # n.getNetworkStateData().resetBlockedDistance()
                 n.getNetworkStateData().resetNonAutoAccumulation()
+                # n.resetSpeeds()
             for m in self.modes.values():  # uniqueModes:
                 m.assignVmtToNetworks()
                 for n in m.networks:
@@ -1075,9 +1084,9 @@ class NetworkCollection:
             else:
                 oldSpeeds = newSpeeds
 
-    def updateNetworks(self):
-        for n in self._networks:
-            n.resetModes()
+    # def updateNetworks(self):
+    #     for n in self._networks:
+    #         n.resetModes()
 
     def __getitem__(self, item):
         return [n for idx, n in self._networks.items() if item in idx]
@@ -1095,6 +1104,7 @@ class NetworkCollection:
         return list(self.modeToNetwork.keys())
 
     def getModeSpeeds(self) -> np.array:
+        # TODO: This can get slow
         return np.array([m.getSpeed() for m in self.modes.values()])
 
     def getModeOperatingCosts(self):
@@ -1221,8 +1231,8 @@ class CollectedNetworkStateData:
                 if ts is None:
                     ts = val.t[:-1]
                 labels.append((mID, modes))
-        return ts, np.stack(speeds, axis=-1), np.stack(ns, axis=-1), np.stack(inflows, axis=-1), np.stack(outflows,
-                                                                                                          axis=-1), labels
+        return ts, np.stack(
+            speeds, axis=-1), np.stack(ns, axis=-1), np.stack(inflows, axis=-1), np.stack(outflows, axis=-1), labels
 
     def __bool__(self):
         return len(self.__data) > 0

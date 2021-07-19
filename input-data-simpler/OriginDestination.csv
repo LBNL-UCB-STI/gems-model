@@ -1,10 +1,7 @@
 ﻿HomeMicrotypeID,TimePeriodID,PopulationGroupTypeID,TripPurposeID,OriginMicrotypeID,DestinationMicrotypeID,Portion
 A,AM-Peak,high-income,work,A,A,1.0
-A,AM-Peak,low-income,work,A,A,1.0
 A,AM-Peak,high-income,nonwork,A,A,1.0
-A,AM-Peak,low-income,nonwork,A,A,1.0
-A,Midday,low-income,work,A,A,1.0
+A,Midday,high-income,work,A,A,1.0
+A,Midday,high-income,nonwork,A,A,1.0
 A,PM-Peak,high-income,work,A,A,1.0
-A,PM-Peak,low-income,work,A,A,1.0
 A,PM-Peak,high-income,nonwork,A,A,1.0
-A,PM-Peak,low-income,nonwork,A,A,1.0

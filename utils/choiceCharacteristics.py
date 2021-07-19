@@ -154,6 +154,7 @@ class CollectedChoiceCharacteristics:
         self.__distanceBins = DistanceBins()
         self.__numpy = np.zeros((len(scenarioData.odiToIdx), len(scenarioData.modeToIdx), len(scenarioData.paramToIdx)),
                                 dtype=float)
+        self.__broken = False
 
     @property
     def odiToIdx(self):
@@ -199,9 +200,10 @@ class CollectedChoiceCharacteristics:
         self.__numpy[~np.isnan(self.__numpy)] *= 0.0
         self.__numpy[:, :, self.paramToIdx['intercept']] = 1
 
-    def updateChoiceCharacteristics(self, microtypes, trips):
+    def updateChoiceCharacteristics(self, microtypes, trips) -> np.ndarray:
         self.resetChoiceCharacteristics()
-        travelTimeInHours = speedToTravelTime(microtypes.numpySpeed, self.__demand.toThroughDistance)
+        travelTimeInHours, broken = speedToTravelTime(microtypes.numpySpeed, self.__demand.toThroughDistance)
+        self.__broken = broken
 
         for odIndex, trip in trips:
             if odIndex.d != 'None' and odIndex.o != 'None':
@@ -218,14 +220,23 @@ class CollectedChoiceCharacteristics:
         # otherTravelTime = self.__numpy[:,:, self.paramToIdx['travel_time']]
         # print(travelTimeInHours - otherTravelTime)
         self.__numpy[:, :, self.paramToIdx['travel_time']] = travelTimeInHours
+        return self.__numpy
+
+    def isBroken(self):
+        return self.__broken
 
 
-def speedToTravelTime(modeSpeed: np.ndarray, toThroughDistance: np.ndarray) -> np.ndarray:
+def speedToTravelTime(modeSpeed: np.ndarray, toThroughDistance: np.ndarray) -> (np.ndarray, bool):
+    if np.any(np.isnan(modeSpeed) | (modeSpeed <= 0.01)):
+        broken = True
+    else:
+        broken = False
+    modeSpeed[(modeSpeed < 0.001) | np.isnan(modeSpeed)] = 0.001
     modeSecondsPerMeter = (1 / modeSpeed)
     modeSecondsPerMeter[np.isinf(modeSecondsPerMeter)] = 0.0
     assignmentMatrix = np.max(toThroughDistance, axis=0) * 1609.34
     throughTravelTimeInSeconds = assignmentMatrix @ modeSecondsPerMeter
-    return throughTravelTimeInSeconds / 3600.0
+    return throughTravelTimeInSeconds / 3600.0, broken
 
 
 def filterAllocation(mode: str, inputAllocation, microtypes):

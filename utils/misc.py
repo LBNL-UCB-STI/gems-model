@@ -21,11 +21,14 @@ class TimePeriods:
     def __iter__(self):
         return iter(self.__timePeriods.items())
 
-    def importTimePeriods(self, df: pd.DataFrame):
+    def importTimePeriods(self, df: pd.DataFrame, nSubBins=1):
+        idx = 0
         for row in df.itertuples():
-            self[row.Index] = row.DurationInHours
-            self.__ids[row.Index] = row.TimePeriodID
-        print("|  Loaded ", len(df), " time periods")
+            for sub in range(nSubBins):
+                self[str(idx)] = row.DurationInHours / nSubBins
+                self.__ids[str(idx)] = row.TimePeriodID
+                idx += 1
+        print("|  Loaded ", len(df) * nSubBins, " time periods")
 
     def __contains__(self, item):
         if item in self.__timePeriods:

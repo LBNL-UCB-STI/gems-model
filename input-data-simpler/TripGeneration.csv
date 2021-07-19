@@ -1,10 +1,4 @@
 ﻿TimePeriodID,PopulationGroupTypeID,TripPurposeID,TripGenerationRatePerHour
-Midday,low-income,work,0.05
-PM-Peak,low-income,work,0.2
-Evening,low-income,work,0.05
-Midday,low-income,nonwork,0.05
-PM-Peak,low-income,nonwork,0.2
-Evening,low-income,nonwork,0.05
 Midday,high-income,work,0.05
 PM-Peak,high-income,work,0.25
 Evening,high-income,work,0.05

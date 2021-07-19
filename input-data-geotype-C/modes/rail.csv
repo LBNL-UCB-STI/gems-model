@@ -1,0 +1,6 @@
+MicrotypeID,Headway,PerStartCost,PerEndCost,PerMileCost,VehicleCapacity,StopSpacing,SpeedInMetersPerSecond,VehicleOperatingCostsPerHour,VehicleSize,CoveragePortion
+1,900,4,0,0,2000,1600,20,230.0,10,0.6
+2,900,4,0,0,2000,1600,20,230.0,10,0.4
+3,900,4,0,0,2000,1600,20,230.0,10,0.2
+4,900,4,0,0,2000,1600,20,230.0,10,0.1
+6,900,4,0,0,2000,1600,20,230.0,10,0.05

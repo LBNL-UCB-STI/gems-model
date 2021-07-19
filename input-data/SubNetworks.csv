@@ -1,6 +1,6 @@
 ﻿SubnetworkID,MicrotypeID,ModesAllowed,Length,vMax,densityMax,Type,Dedicated,avgLinkLength
 1,A,Auto-Bus-Bike,15000,16,0.145,Road,False,50
-2,B,Auto-Bus-Bike,16000,16,0.145,Road,False,50
+2,B,Auto-Bus-Bike,18000,18,0.145,Road,False,50
 3,C,Auto-Bus-Bike,16000,20,0.145,Road,False,50
 4,D,Auto-Bus-Bike,20000,22,0.145,Road,False,50
 5,A,Walk,10000,1.35,,Sidewalk,True,
@@ -17,3 +17,5 @@
 16,B,Bike,0,5,,BikePath,True,
 17,C,Bike,100,5,,BikePath,True,
 18,D,Bike,0,5,,BikePath,True,
+19,B,Rail,1000,25,,Subway,True,
+20,C,Rail,1000,30,,Subway,True,

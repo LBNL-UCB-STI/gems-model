@@ -1,7 +1,9 @@
-pytest
-numpy
-pandas
-matplotlib
-scipy
-noisyopt
-scikit-optimize
+pytest>=5.4.3
+numpy>=1.18.5
+pandas>=1.0.5
+matplotlib>=3.3.3
+scipy>=1.4.1
+ipywidgets>=7.6.3
+plotly>=4.14.3
+numba>=0.53.1
+mock~=4.0.3
